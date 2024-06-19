@@ -80,7 +80,7 @@ class Edge:
             return Segment(Edge.SBEG, Edge.SFIN)
         x = - f0 / (f1 - f0)
         return Segment(Edge.SBEG, x) if f0 < 0.0 else Segment(x, Edge.SFIN)
-    
+
     # Проверка всех условий (за исключением невидимости) для ребра
 
     # Центр ребра находится на расстоянии строго меньше
@@ -163,7 +163,6 @@ class Polyedr:
 
         # списки вершин, рёбер и граней полиэдра
         self.vertexes, self.edges, self.facets = [], [], []
-        # self.original_vertexes, self.original_edges, self.original_facets = [], [], []
         self.sum = 0.0
         self.c = 0
 
@@ -177,7 +176,8 @@ class Polyedr:
                     c = float(buf.pop(0))
                     self.c = c
                     # углы Эйлера, определяющие вращение
-                    self.alpha, self.beta, self.gamma = (float(x) * pi / 180.0 for x in buf)
+                    self.alpha, self.beta, self.gamma = (
+                        float(x) * pi / 180.0 for x in buf)
                 elif i == 1:
                     # во второй строке число вершин, граней и рёбер полиэдра
                     nv, nf, ne = (int(x) for x in line.split())
@@ -186,7 +186,6 @@ class Polyedr:
                     x, y, z = (float(x) for x in line.split())
                     self.vertexes.append(R3(x, y, z).rz(
                         self.alpha).ry(self.beta).rz(self.gamma) * c)
-                    # self.original_vertexes.append(R3(x, y, z))
                 else:
                     # вспомогательный массив
                     buf = line.split()
@@ -194,14 +193,11 @@ class Polyedr:
                     size = int(buf.pop(0))
                     # массив вершин этой грани
                     vertexes = list(self.vertexes[int(n) - 1] for n in buf)
-                    # original_vertexes = list(self.original_vertexes[int(n) - 1] for n in buf)
                     # задание рёбер грани
                     for n in range(size):
                         self.edges.append(Edge(vertexes[n - 1], vertexes[n]))
-                        # self.original_edges.append(Edge(original_vertexes[n - 1], original_vertexes[n]))
                     # задание самой грани
                     self.facets.append(Facet(vertexes))
-                    # self.original_facets.append(Facet(original_vertexes))
 
     # Итоговый метод, считающий необходимую характеристику
     def calculate_sum(self):
@@ -209,8 +205,11 @@ class Polyedr:
         for e in self.edges:
             for f in self.facets:
                 e.shadow(f)
-            if e.gaps == [] and e.good_center(self.c, self.alpha, self.beta, self.gamma) and e.good_angle(self.alpha, self.beta, self.gamma):
-                final_sum += e.projection_length(self.c, self.alpha, self.beta, self.gamma)
+            if e.gaps == [] and e.good_center(
+                self.c, self.alpha, self.beta, self.gamma) and e.good_angle(
+                    self.alpha, self.beta, self.gamma):
+                final_sum += e.projection_length(
+                    self.c, self.alpha, self.beta, self.gamma)
         return final_sum
 
     # Метод изображения полиэдра
@@ -220,8 +219,11 @@ class Polyedr:
             for f in self.facets:
                 e.shadow(f)
             # Мы проверили все тени и теперь можно проверить наши условия
-            if e.gaps == [] and e.good_center(self.c, self.alpha, self.beta, self.gamma) and e.good_angle(self.alpha, self.beta, self.gamma):
-                self.sum += e.projection_length(self.c, self.alpha, self.beta, self.gamma)
+            if e.gaps == [] and e.good_center(
+                self.c, self.alpha, self.beta, self.gamma) and e.good_angle(
+                    self.alpha, self.beta, self.gamma):
+                self.sum += e.projection_length(
+                    self.c, self.alpha, self.beta, self.gamma)
             for s in e.gaps:
                 tk.draw_line(e.r3(s.beg), e.r3(s.fin))
         print('Сумма длин проекций рёбер, ' +
