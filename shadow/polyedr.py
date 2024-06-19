@@ -1,4 +1,5 @@
-from math import pi
+import math
+from math import pi, sqrt
 from functools import reduce
 from operator import add
 from common.r3 import R3
@@ -79,6 +80,41 @@ class Edge:
             return Segment(Edge.SBEG, Edge.SFIN)
         x = - f0 / (f1 - f0)
         return Segment(Edge.SBEG, x) if f0 < 0.0 else Segment(x, Edge.SFIN)
+    
+    # Проверка всех условий (за исключением невидимости) для ребра
+
+    # Центр ребра находится на расстоянии строго меньше
+    # 1 от плоскости x = 2 (с учетом гомотетии и обратным преобразованием)
+    def good_center(self, c=1.0, ugol1=0.0, ugol2=0.0, ugol3=0.0):
+        beg = R3(self.beg.x, self.beg.y, self.beg.z)
+        fin = R3(self.fin.x, self.fin.y, self.fin.z)
+        original_beg = beg.rz(-ugol3).ry(-ugol2).rz(-ugol1)
+        original_fin = fin.rz(-ugol3).ry(-ugol2).rz(-ugol1)
+        center_point = R3((original_beg.x + original_fin.x) / 2,
+                          (original_beg.y + original_fin.y) / 2,
+                          (original_beg.z + original_fin.z) / 2)
+        return True if 1 < center_point.x / c < 3 else False
+
+    def good_angle(self, ugol1=0.0, ugol2=0.0, ugol3=0.0):
+        limit_angle_v2 = math.cos(math.pi / 7) ** 2
+        vector = R3(
+            self.fin.x - self.beg.x,
+            self.fin.y - self.beg.y,
+            self.fin.z - self.beg.z)
+        V = R3(0.0, 0.0, 1.0)
+        cos_v2 = (V.dot(vector)**2) / (V.dot(V) * vector.dot(vector))
+        need_cos_v2 = 1 - cos_v2
+        return need_cos_v2 >= limit_angle_v2
+
+    # Нахождение длины проекции ребра (с учетом гомотетии)
+    def projection_length(self, c=1.0, ugol1=0.0, ugol2=0.0, ugol3=0.0):
+        beg = R3(self.beg.x, self.beg.y, self.beg.z)
+        fin = R3(self.fin.x, self.fin.y, self.fin.z)
+        original_beg = beg.rz(-ugol3).ry(-ugol2).rz(-ugol1)
+        original_fin = fin.rz(-ugol3).ry(-ugol2).rz(-ugol1)
+        lenght = sqrt(
+            (fin.x - beg.x)**2 + (fin.y - beg.y)**2)
+        return lenght / c
 
 
 class Facet:
@@ -127,6 +163,9 @@ class Polyedr:
 
         # списки вершин, рёбер и граней полиэдра
         self.vertexes, self.edges, self.facets = [], [], []
+        # self.original_vertexes, self.original_edges, self.original_facets = [], [], []
+        self.sum = 0.0
+        self.c = 0
 
         # список строк файла
         with open(file) as f:
@@ -136,8 +175,9 @@ class Polyedr:
                     buf = line.split()
                     # коэффициент гомотетии
                     c = float(buf.pop(0))
+                    self.c = c
                     # углы Эйлера, определяющие вращение
-                    alpha, beta, gamma = (float(x) * pi / 180.0 for x in buf)
+                    self.alpha, self.beta, self.gamma = (float(x) * pi / 180.0 for x in buf)
                 elif i == 1:
                     # во второй строке число вершин, граней и рёбер полиэдра
                     nv, nf, ne = (int(x) for x in line.split())
@@ -145,7 +185,8 @@ class Polyedr:
                     # задание всех вершин полиэдра
                     x, y, z = (float(x) for x in line.split())
                     self.vertexes.append(R3(x, y, z).rz(
-                        alpha).ry(beta).rz(gamma) * c)
+                        self.alpha).ry(self.beta).rz(self.gamma) * c)
+                    # self.original_vertexes.append(R3(x, y, z))
                 else:
                     # вспомогательный массив
                     buf = line.split()
@@ -153,11 +194,24 @@ class Polyedr:
                     size = int(buf.pop(0))
                     # массив вершин этой грани
                     vertexes = list(self.vertexes[int(n) - 1] for n in buf)
+                    # original_vertexes = list(self.original_vertexes[int(n) - 1] for n in buf)
                     # задание рёбер грани
                     for n in range(size):
                         self.edges.append(Edge(vertexes[n - 1], vertexes[n]))
+                        # self.original_edges.append(Edge(original_vertexes[n - 1], original_vertexes[n]))
                     # задание самой грани
                     self.facets.append(Facet(vertexes))
+                    # self.original_facets.append(Facet(original_vertexes))
+
+    # Итоговый метод, считающий необходимую характеристику
+    def calculate_sum(self):
+        final_sum = 0.0
+        for e in self.edges:
+            for f in self.facets:
+                e.shadow(f)
+            if e.gaps == [] and e.good_center(self.c, self.alpha, self.beta, self.gamma) and e.good_angle(self.alpha, self.beta, self.gamma):
+                final_sum += e.projection_length(self.c, self.alpha, self.beta, self.gamma)
+        return final_sum
 
     # Метод изображения полиэдра
     def draw(self, tk):  # pragma: no cover
@@ -165,5 +219,10 @@ class Polyedr:
         for e in self.edges:
             for f in self.facets:
                 e.shadow(f)
+            # Мы проверили все тени и теперь можно проверить наши условия
+            if e.gaps == [] and e.good_center(self.c, self.alpha, self.beta, self.gamma) and e.good_angle(self.alpha, self.beta, self.gamma):
+                self.sum += e.projection_length(self.c, self.alpha, self.beta, self.gamma)
             for s in e.gaps:
                 tk.draw_line(e.r3(s.beg), e.r3(s.fin))
+        print('Сумма длин проекций рёбер, ' +
+              f'удовлетворяющих условиям = {self.sum}')
