@@ -1,4 +1,4 @@
-from math import sin, cos
+from math import sin, cos, pi
 
 
 class R3:
@@ -44,7 +44,7 @@ class R3:
 
 
 if __name__ == "__main__":  # pragma: no cover
-    x = R3(1.0, 1.0, 1.0)
+    x = R3(2.5, 0.0, 0.0)
     print("x", type(x), x.__dict__)
     y = x + R3(1.0, -1.0, 0.0)
     print("y", type(y), y.__dict__)
@@ -54,3 +54,8 @@ if __name__ == "__main__":  # pragma: no cover
     print("u", type(u), u)
     v = x.cross(y)
     print("v", type(v), v.__dict__)
+    print()
+    x = x.rz(pi / 4)
+    print(x.__dict__)
+    y = x.rz(-pi / 4)
+    print(y.__dict__)
