@@ -1,4 +1,4 @@
-from tkinter import *
+from tkinter import *  # pragma: no cover
 
 # Размер окна
 SIZE = 900
@@ -18,7 +18,6 @@ def y(p):
 
 class TkDrawer:
     """ Графический интерфейс """
-
     # Конструктор
     def __init__(self):
         self.root = Tk()
@@ -44,7 +43,7 @@ class TkDrawer:
         self.root.update()
 
 
-if __name__ == "__main__":  # pragma: no cover
+if __name__ == "__main__":
 
     import time
     from r3 import R3
