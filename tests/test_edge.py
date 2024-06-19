@@ -112,3 +112,81 @@ class TestVoid(unittest.TestCase):
         s.shadow(f)
         self.assertEqual(len(s.gaps), 1)
         self.assertEqual(SegmentApproxMatcher(s.gaps[0]), Segment(0.0, 1.0))
+
+    # Проверка дополнительных методов
+
+    # Проверка центра ребра
+
+    # Центр ребра, параллельного Ox, лежит на 2.5 -> подходит
+    def test_center_01(self):
+        s = Edge(R3(0.0, 0.0, 0.0), R3(5.0, 0.0, 0.0))
+        self.assertTrue(s.good_center())
+
+    # Центр по оси Ox лежит на 1.5, остальное неважно
+    def test_center_02(self):
+        s = Edge(R3(0.0, 0.0, 0.0), R3(3.0, 456.0, 47.0))
+        self.assertTrue(s.good_center())
+
+    # Центра на оси Ox лежит на 3.0, но по условию строгое нер-во
+    def test_center_03(self):
+        s = Edge(R3(0.0, 0.0, 0.0), R3(6.0, -12.0, 63.9))
+        self.assertFalse(s.good_center())
+
+    # Проверка угла
+
+    # Вертикальное ребро не подходит (угол pi/2)
+    def test_angle_01(self):
+        s = Edge(R3(0.0, 0.0, 0.0), R3(0.0, 0.0, 1.0))
+        self.assertFalse(s.good_angle())
+
+    # Ребро на оси Ox подходит (0 рад)
+    def test_angle_02(self):
+        s = Edge(R3(0.0, 0.0, 0.0), R3(1.0, 0.0, 0.0))
+        self.assertTrue(s.good_angle())
+
+    # Ребро на оси Oy подходит (0 рад)
+    def test_angle_03(self):
+        s = Edge(R3(0.0, 0.0, 0.0), R3(0.0, 1.0, 0.0))
+        self.assertTrue(s.good_angle())
+
+    # Ребро на плоскости Oxy подходит (0 рад)
+    def test_angle_04(self):
+        s = Edge(R3(0.0, 0.0, 0.0), R3(1.0, 1.0, 0.0))
+        self.assertTrue(s.good_angle())
+
+    # Тангенс угла меньше, чем 1/sqrt(3) и угол подходит
+    def test_angle_05(self):
+        s = Edge(R3(0.0, 0.0, 0.0), R3(1.75, 30.0, 1.0))
+        self.assertTrue(s.good_angle())
+
+    # Тангенс угла больше, чем 1/sqrt(3) и угол НЕ подходит
+    def test_angle_06(self):
+        s = Edge(R3(0.0, 0.0, 0.0), R3(1.8, 0.0, 1.0))
+        self.assertFalse(s.good_angle())
+
+    # Проверка проекции
+
+    # Единичный по оси Oy
+    def test_projection_01(self):
+        s = Edge(R3(0.0, 0.0, 0.0), R3(0.0, 1.0, 0.0))
+        self.assertEqual(s.projection_length(), 1.0)
+
+    # Единичный по оси Ox
+    def test_projection_02(self):
+        s = Edge(R3(0.0, 0.0, 0.0), R3(1.0, 0.0, 0.0))
+        self.assertEqual(s.projection_length(), 1.0)
+
+    # Про координату z «забываем»
+    def test_projection_03(self):
+        s = Edge(R3(0.0, 0.0, 0.0), R3(1.0, 0.0, 47.0))
+        self.assertEqual(s.projection_length(), 1.0)
+
+    # Египетский треугольник
+    def test_projection_04(self):
+        s = Edge(R3(0.0, 0.0, 0.0), R3(3.0, 4.0, 0.0))
+        self.assertEqual(s.projection_length(), 5.0)
+
+    # sqrt(53) ~ 7.28
+    def test_projection_05(self):
+        s = Edge(R3(0.0, 0.0, 0.0), R3(2.0, 7.0, 0.0))
+        self.assertAlmostEqual(s.projection_length(), 7.3, 1)
