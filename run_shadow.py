@@ -6,8 +6,10 @@ from shadow.polyedr import Polyedr
 
 
 tk = TkDrawer()
+list_figure = ['figure1', 'figure2', 'figure3', 'figure4', 'figure5',
+      "ccc", "cube", "box", "king", "cow"]
 try:
-    for name in ["ccc", "cube", "box", "king", "cow"]:
+    for name in list_figure:
         print("=============================================================")
         print(f"Начало работы с полиэдром '{name}'")
         start_time = time()
