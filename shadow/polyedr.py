@@ -96,11 +96,15 @@ class Edge:
         return True if 1 < center_point.x / c < 3 else False
 
     def good_angle(self, ugol1=0.0, ugol2=0.0, ugol3=0.0):
-        limit_angle_v2 = math.cos(math.pi / 7) ** 2
+        beg = R3(self.beg.x, self.beg.y, self.beg.z)
+        fin = R3(self.fin.x, self.fin.y, self.fin.z)
+        original_beg = beg.rz(-ugol3).ry(-ugol2).rz(-ugol1)
+        original_fin = fin.rz(-ugol3).ry(-ugol2).rz(-ugol1)
         vector = R3(
-            self.fin.x - self.beg.x,
-            self.fin.y - self.beg.y,
-            self.fin.z - self.beg.z)
+            original_fin.x - original_beg.x,
+            original_fin.y - original_beg.y,
+            original_fin.z - original_beg.z)
+        limit_angle_v2 = math.cos(math.pi / 7) ** 2
         V = R3(0.0, 0.0, 1.0)
         cos_v2 = (V.dot(vector)**2) / (V.dot(V) * vector.dot(vector))
         need_cos_v2 = 1 - cos_v2
